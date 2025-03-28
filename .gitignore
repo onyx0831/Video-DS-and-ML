@@ -144,6 +144,7 @@ cython_debug/
 .DS_store
 
 data/video_data/*
+mlflow_pipeline/mlflow_test/*
 work/*
 input/*
 features/*
