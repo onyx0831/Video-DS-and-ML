@@ -1,0 +1,28 @@
+preprocess:
+  input_data: ./data/video_emotion_sample.csv
+  video_dir: ./data/video_data/
+  label_column: sentiments_name
+  feature_columns:
+    - video_id
+  n_splits: 2
+  test_size: 0.2
+  interval_sec: 2
+  seed: 42
+
+model:
+  use_model: VideoMAE
+  VideoMAE:
+    num_frames: 16
+    image_size: 224
+    image_mean: [0.485, 0.456, 0.406]
+    image_std: [0.229, 0.224, 0.225]
+    padding_mask: True
+    model_kwargs:
+      model_path: MCG-NJU/videomae-base
+      use_memory_efficient_attention: True
+
+train:
+  loss: mse
+
+
+
