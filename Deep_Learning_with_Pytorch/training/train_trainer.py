@@ -4,12 +4,18 @@
 import yaml
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import torch
+import torch.nn as nn
+from transformers import Trainer, TrainingArguments
+from transformers import EarlyStoppingCallback
 
 from preprocessing import preprocessing
 from video_dataset import VideoDataset, TargetDataset
 from utils.multi_dataset import MultiDataset
 from utils.video_transform import VideoTransform
-from ideo_dataloader import VideoCollator
+from video_dataloader import VideoCollator
+from video_encoder import Encoder
+from video_trainer import custom_compute_metrics, SaveEvalPrediction, save_training_history
 
 
 def get_config(config_path):
@@ -68,7 +74,95 @@ def main():
     # print(f"eval_dataset_one: {eval_dataset[0]}")
 
     video_collator = VideoCollator()
+    num_class = train_df['label'].nunique()
 
+    """
+    
+    loss_name = config["train"]["loss"]
+    if loss_name == "mse":
+        loss_kwargs = dict(
+            loss_fct=nn.MSELoss(), last_activation=nn.Sigmoid(), post_loss_process=None
+        )
+    elif loss_name == "bce":
+        loss_kwargs = dict(
+            loss_fct=nn.BCEWithLogitsLoss(),
+            last_activation=None,
+            post_loss_process=nn.Sigmoid(),
+        )
+    elif loss_name == "ce":
+        loss_kwargs = dict(
+            loss_fct=nn.CrossEntropyLoss(),
+            last_activation=None,
+            post_loss_process=nn.Softmax(),
+        )
+    else:
+        loss_kwargs = {}
+    """
+    loss_kwargs = dict(
+        loss_fct=nn.CrossEntropyLoss(),
+        last_activation=None,
+        post_loss_process=nn.Softmax(),
+    )
+    model_kwargs = dict(
+        model_name=model_type,
+        pretrained=True,
+        model_kwargs=dict(config["model"][model_type]["model_kwargs"]),
+        output_dim=num_class,
+    )
+    train_kwargs = dict(**loss_kwargs, **model_kwargs)
+    output_dir = config["train"]["output_dir"]
+
+    model = Encoder(**train_kwargs)
+
+    # 学習・検証に関するパラメータの設定:詳しくはtransformers.trainerを参照
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        per_device_train_batch_size=config["train"]["per_device_train_batch_size"],
+        per_device_eval_batch_size=config["train"]["per_device_eval_batch_size"],
+        gradient_accumulation_steps=config["train"]["gradient_accumulation_steps"],
+        evaluation_strategy=config["train"]["evaluation_strategy"],
+        logging_strategy=config["train"]["evaluation_strategy"],
+        save_strategy=config["train"]["evaluation_strategy"],
+        logging_steps=config["train"]["eval_steps"],
+        save_steps=config["train"]["eval_steps"],
+        eval_steps=config["train"]["eval_steps"],
+        learning_rate=config["train"]["lr"],
+        lr_scheduler_type=config["train"]["lr_scheduler_type"],
+        weight_decay=config["train"]["weight_decay"],
+        warmup_steps=config["train"]["warmup_steps"],
+        overwrite_output_dir=True,
+        save_total_limit=1,
+        label_names=["targets"],
+        num_train_epochs=config["train"]["num_train_epochs"],
+        load_best_model_at_end=True,
+        disable_tqdm=config["train"]["disable_trainer_tqdm"],
+        fp16=(config["train"]["predicsion_type"] == "fp16"),
+        bf16=(config["train"]["predicsion_type"] == "bf16"),
+        dataloader_num_workers=config["train"]["num_workers"],
+        save_safetensors=False,
+        report_to="none",
+    ) 
+
+    trainer = Trainer(
+        model=model,
+        data_collator=video_collator,
+        compute_metrics=custom_compute_metrics,#SaveEvalPrediction(custom_compute_metrics, output_dir=output_dir),
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        callbacks=[
+            EarlyStoppingCallback(early_stopping_patience=config["train"]["early_stopping_patience"])
+        ],
+    )
+
+    trainer.train(
+        ignore_keys_for_eval=[
+            "encoded_state",
+            "last_hidden_state",
+            "attentions",
+        ]
+    )
+    print("Training finished.")
 
 
 if __name__ == "__main__":
