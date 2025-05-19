@@ -9,7 +9,6 @@ from torchvision import transforms
 # private
 from .common import RiseSystemConfig
 from .sub_models import load_segment_model, load_depth_model
-from ...functional.deprecated import deprecated
 
 __all__ = [
     "MaskGeneratorConfig",
@@ -19,10 +18,6 @@ __all__ = [
     "GPMaskGeneratorConfig",
     "GPMaskGenerator",
 ]
-
-# deprecated soon
-__all__ += ["_generate_mask"]
-
 
 # --------------------------------------------------------------------------------
 # base classes
@@ -140,15 +135,6 @@ class UpsampledGridMaskGenerator(MaskGenerator):
         crop = transforms.RandomCrop((H, W))
         M3 = torch.cat([crop(m).unsqueeze(0) for m in M2], dim=0).to(dtype)
         return M3
-
-
-@deprecated(instead="UpsampledGridMask")
-def _generate_mask(n, device, dtype=torch.float, size=(224, 224), mask_grid=(7, 7)):
-    # 昔のやつ
-    config = UpsampledGridMaskGeneratorConfig(size=size, mask_grid=mask_grid)
-    system_config = RiseSystemConfig(device=device, dtype=dtype)
-    mask = UpsampledGridMaskGenerator(config, system_config)
-    return mask.generate(n)
 
 
 ################################################################################
