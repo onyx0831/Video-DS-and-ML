@@ -4,23 +4,23 @@ from typing import Callable, Union, Optional, Sequence
 import torch
 from torch import nn
 
-from .rise_utils.mask_generator import (
+from rise_utils.mask_generator import (
     MaskGenerator,
     MaskGeneratorConfig,
     UpsampledGridMaskGeneratorConfig,
 )
-from .rise_utils.mask_processor import (
+from rise_utils.mask_processor import (
     MaskProcessor,
     MaskProcessorConfig,
     GrayMaskProcessorConfig,
 )
-from .rise_utils.aggregator import (
+from rise_utils.aggregator import (
     Aggregator,
     AggregatorConfig,
     ConditionalMeanAggregatorConfig,
 )
-from .rise_utils.common import RiseSystemConfig
-from .utils import recursive_lambda
+from rise_utils.common import RiseSystemConfig
+from rise_utils.utils import recursive_lambda
 
 __all__ = ["RISE"]
 
