@@ -1,6 +1,5 @@
 from typing import Callable, Dict
 import pandas as pd
-import numpy as np
 import json
 from sklearn.metrics import precision_score, recall_score, f1_score
 from transformers import EvalPrediction

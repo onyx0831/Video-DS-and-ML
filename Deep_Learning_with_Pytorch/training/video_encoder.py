@@ -97,7 +97,7 @@ class Encoder(nn.Module):
         logits = self.last_activation(self.head(encoded_state))
         loss = None
         if targets is not None and self.loss_fct is not None:
-            loss = self.loss_fct(logits, targets.squeeze_())
+            loss = self.loss_fct(logits, targets.squeeze_()) # #.unsqueeze(1).squeeze_()
         logits = self.post_loss_process(logits)
 
         return ModelOutput(

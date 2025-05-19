@@ -1,6 +1,5 @@
-#import os
+import os
 #import sys
-
 import yaml
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -13,6 +12,7 @@ from preprocessing import preprocessing
 from video_dataset import VideoDataset, TargetDataset
 from utils.multi_dataset import MultiDataset
 from utils.video_transform import VideoTransform
+from utils import tools
 from video_dataloader import VideoCollator
 from video_encoder import Encoder
 from video_trainer import custom_compute_metrics, SaveEvalPrediction, save_training_history
@@ -32,6 +32,8 @@ def main():
     input_data = config["preprocess"]["input_data"]
     df = pd.read_csv(input_data)
     seed = config["preprocess"]["seed"]
+    torch.manual_seed(0)
+    torch.cuda.manual_seed(0)
     test_size = config["preprocess"]["test_size"]
     label_column = config["preprocess"]["label_column"]
 
@@ -111,6 +113,8 @@ def main():
     )
     train_kwargs = dict(**loss_kwargs, **model_kwargs)
     output_dir = config["train"]["output_dir"]
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
 
     model = Encoder(**train_kwargs)
 
@@ -162,6 +166,22 @@ def main():
             "attentions",
         ]
     )
+
+    # 学習結果、学習済モデルの保存
+    trainer.save_state()  # trainer_state.json
+    trainer.save_model()  # pytorch_model.bin
+    history_df = save_training_history(output_dir + "/trainer_state.json")
+    history_df.to_csv(output_dir + "/training_history.csv", index=False)
+
+    # 学習曲線のグラフの作成・保存
+    save_dir = os.path.join(output_dir, "training_figs")
+    os.makedirs(save_dir, exist_ok=True)
+    # プロットに失敗しても止まらないようにtry句を使う
+    try:
+        tools.plot_learning_curves(history_df, save_dir)
+    except Exception as e:
+        message = f"Failed to make training curves; {str(e)}"
+        print(message)
     print("Training finished.")
 
 

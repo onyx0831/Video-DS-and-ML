@@ -28,13 +28,13 @@ train:
   per_device_eval_batch_size: 8
   gradient_accumulation_steps: 1
   evaluation_strategy: steps # steps, epoch
-  eval_steps: 30
+  eval_steps: 3
   lr: 1.0e-4
   lr_scheduler_type: cosine # cosine, linear, constant_with_warmup
   warmup_steps: 0 # 'constant_with_warmup'の学習率のwarmupのステップ数:0はwarmupなし
   weight_decay: 0.0 # 重み減衰率
   warmup_steps: 0
-  num_train_epochs: 1
+  num_train_epochs: 3
   disable_trainer_tqdm: false
   predicsion_type: fp16 # fp16, fp32, bf16
   num_workers: 4
