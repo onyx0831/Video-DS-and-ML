@@ -1,0 +1,12 @@
+# NVIDIA GPU のあるマシン（GCP の GPU VM など）で compose.yaml に重ねて使う
+services:
+  app:
+    # DataLoader の num_workers > 0 で共有メモリが不足しないようにする
+    shm_size: 8gb
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
