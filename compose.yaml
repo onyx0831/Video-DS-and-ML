@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    platform: linux/amd64
+    volumes:
+      - .:/workspace
+    environment:
+      # Gradio をコンテナ外から開けるようにする
+      - GRADIO_SERVER_NAME=0.0.0.0
+    ports:
+      - "127.0.0.1:8888:8888" # JupyterLab
+      - "127.0.0.1:8081:8081" # MLflow
+      - "127.0.0.1:7860:7860" # Gradio
